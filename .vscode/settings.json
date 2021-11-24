@@ -1,0 +1,10 @@
+{
+    "python.pythonPath": "Miniconda3/envs/cryoGridML/bin/python",
+    "python.linting.pylintEnabled": true,
+    "python.linting.enabled": true,
+    "python.formatting.autopep8Path": "/fs/pool/pool-plitzko/Duc/cryoGridML/Miniconda3/bin/autopep8",
+    "files.autoSave": "afterDelay",
+    "files.watcherExclude": {
+        "**/Miniconda3/**": true,
+      }
+}

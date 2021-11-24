@@ -1,0 +1,39 @@
+{
+    "data": {
+        "pathGoodMRC": "data/trainClassifier/good.mrc",
+        "pathBadMRC": "data/trainClassifier/bad.mrc",
+        "classes": ["good", "bad"],
+        "imgSize": 196
+    },
+    "predict": {
+        "saveGridSquares": true,
+        "saveGridMaps": true
+    },
+    "train": {
+        "session_name": "test5",
+        "models":  [
+            {
+                "name": "xception",
+                "tunerType": "hyperband",
+                "epochs": 200,
+                "epochs_tuner": 1,
+                "seed": 42,
+                "batch_size": 32,
+                "datasetNr": 0,
+                "architecture": "EfficientNetB5",
+                "activation": "softmax",
+                "learning_rate": [1e-3],
+                "loss": ["kl_divergence"],
+                "optimizer": ["RMSprop"],
+                "contrast": [0.3],
+                "flip":[true],
+                "hTranslate": [0.1],
+                "wTranslate": [0.3],
+                "rotate": [0.3],
+                "layers_nr": [1,1],
+                "layers_units": [2144, 2144, 32],
+                "layers_act": ["relu"]
+            }
+        ]
+    }
+}
