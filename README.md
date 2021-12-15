@@ -2,6 +2,11 @@
 CryoGridML can detect cryo-EM grid square meshes from cryo-EM grid maps (patch format) and classify the detected squares into high- and low quality categories. Training networks and hyperparameter optimization are also included.
 
 ## Updates
+15.12.
+- fix GPU memory full
+- downsample: bilinear
+- added gridmap.jpg with bounding box overlay
+
 24.11.
 - added preprocessing: patch format -> image format -> downscaling
 
@@ -33,7 +38,9 @@ To run CryoGridML *Nvidia* GPUs are required. We also need *CUDA* and *cuDNN* to
 
 - CUDA (10.1)
 - cuDNN (7.6.4)
-- Tensorflow (2.3)
+- crYOLO
+- extractpieces
+- blendmont
 
 A package manager such as *Anaconda/ Miniconda* is also required, e.g.:
 ```bash
@@ -50,15 +57,19 @@ source install.sh
 ```
 
 ## Run 
-Start CryoGridML with the following commands:
+Set your environment:
 ```bash
 source setEnv.sh
-source main.sh -p data/predict/2020-12-14.mrc #not working right now
+```
+
+Start CryoGridML:
+```bash
+conda activate cryoGridML
+python main.py -p data/predict/2020-12-14.mrc
+conda deactivate
 ```
 
 Flags for main.sh:
-- -pd: predict detector
-- -pc: predict classifier
 - -p : predict (detector + classifier)
 - -td: train detector
 - -tc: train classifier (not working right now)

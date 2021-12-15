@@ -10,7 +10,7 @@
         "norm": "STANDARD",
         "filter": [
             0.1,
-            "detection/filtered_tmp/"
+            "detection/3_results/filtered_tmp/"
         ]
     },
     "train": {
@@ -20,7 +20,7 @@
         "pretrained_weights": "",
         "batch_size": 4,
         "learning_rate": 0.0001,
-        "nb_epoch": 200,
+        "nb_epoch": 5,
         "object_scale": 5.0,
         "no_object_scale": 1.0,
         "coord_scale": 1.0,
@@ -34,6 +34,6 @@
         "valid_times": 1
     },
     "other": {
-        "log_path": "detection/logs/"
+        "log_path": "detection/3_results/logs/"
     }
 }

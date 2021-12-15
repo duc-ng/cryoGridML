@@ -2,11 +2,14 @@ import os
 import json
 import argparse
 import numpy as np
+import mrcfile
+import cv2
 from tensorflow import keras
 from datetime import datetime
-from Data import Data
-from Model import Model
+from src.Data import Data
+from src.Model import Model
 import matplotlib.pyplot as plt
+
 
 class Classifier:
     """
@@ -19,6 +22,7 @@ class Classifier:
         self.nr = int("0")  # TODO: overwrite
         self.pathResultsPred = "classification/results/predict"
         self.pathTrain = "classification/results/train"
+        self.pathModel = "classification/model_classification.h5"
         self.pathNow = None
         self.data = None
         self.models = []
@@ -31,26 +35,27 @@ class Classifier:
         self.name = self.config["train"]["models"][self.nr]["name"]
         self.epochs_tuner = self.config["train"]["models"][self.nr]["epochs_tuner"]
         self.epochs = self.config["train"]["models"][self.nr]["epochs"]
+        self.saveGridMaps = self.config["predict"]["saveGridMaps"]
 
-    def predict(self):
+    def predict(self, dataName):
+        # make directory
         print("START CLASSIFICATION.")
+        now = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        self.pathNow = os.path.join(self.pathResultsPred, now)
+        os.makedirs(self.pathNow, exist_ok=True)
+
+        # get models
         if self.useTrainedModels:
             self.models = []  # TODO
         else:
-            now = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-            self.pathNow = os.path.join(self.pathResultsPred, now)
-            os.makedirs(self.pathNow, exist_ok=True)
-            self.data = Data(type="predict", pathResultsPred=self.pathNow)
+            self.data = Data(
+                type="predict", pathResultsPred=self.pathNow, name=dataName)
             self.models = [
-                Model(nr=0, path="classification/model_classification.h5",
-                      data=self.data)
+                Model(nr=0, path=self.pathModel, data=self.data)
             ]
-        plt.imsave(self.pathNow+"/test.jpg", self.data.data_predict[10], cmap='gray')
-        self.data.data_predict = np.expand_dims(self.data.data_predict, axis=3)
 
-            
+        # predict
         for m in self.models:
-            # predict
             predictions = m.model.predict(x=self.data.data_predict, verbose=1)
             predictions_max = np.max(predictions, axis=-1)
             predictions_i = np.argmax(predictions, axis=-1)
@@ -58,17 +63,40 @@ class Classifier:
                 lambda x: self.data.classes[x])(predictions_i)
 
             # save results
-            filePath = os.path.join(self.pathNow, f"predictions_{m.nr}.txt")
+            filePath = os.path.join(self.pathNow, f"predict_{m.name}.txt")
             f = open(filePath, "w")
-            f.write("x,y,prediction,confidence,file\n")
-            index = 0  # index for prediction list
-            for j, fileCoords in enumerate(self.data.coords):
-                for i, (x, y) in enumerate(fileCoords):
-                    f.write(
-                        ','.join([str(x), str(y), predictions_label[index],
-                                  str(predictions_max[index]), self.data.fileNames[j] + ".mrc\n"]))
-                    index += 1
+            f.write("x,y,prediction,confidence\n")
+            for i, (x, y) in enumerate(self.data.coords):
+                pred = predictions_label[i]
+                conf = str(predictions_max[i])
+                f.write(','.join([str(x), str(y), pred,  conf + "\n"]))
             f.close()
+
+            # save gridmap.jpeg with bounding boxes
+            if self.saveGridMaps:
+                with mrcfile.open(self.data.dataMRC) as mrc:
+                    # normalize
+                    imgBox = np.copy(mrc.data)
+                    imgBox = np.stack((imgBox,)*3, axis=-1)  # 1->3channels
+                    imgBox = cv2.normalize(
+                        imgBox, None, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
+                    imgBox = imgBox.astype(np.uint8)
+                    
+                    # draw rectangle + text
+                    d = int(self.data.imgSize/2)
+                    i = zip(self.data.coords, predictions_i, predictions_max)
+                    for (x, y), pred, conf in i:
+                        conf = str(round(conf, 4))
+                        color = (36, 255, 12) if pred == 0 else (255, 0, 0)
+                        up, down, left, right = (y+d, y-d, x-d, x+d)
+                        imgBox = cv2.rectangle(imgBox, pt1=(left, down), pt2=(right, up),
+                                               color=color, thickness=5)
+                        cv2.putText(
+                            imgBox, conf, (left+10, down+30), fontFace=cv2.FONT_HERSHEY_SIMPLEX,
+                            fontScale=0.9, color=color, thickness=2)
+                    
+                    dataFile = os.path.join(self.pathNow, "gridmap.jpg")
+                    plt.imsave(dataFile, imgBox)
 
     def train(self):
         # create dir, save config
@@ -123,33 +151,3 @@ class Classifier:
 
     def evaluate(self, models):
         print("START EVALUATION.")
-
-
-def main():
-    # set cmd line arguments
-    parser = argparse.ArgumentParser(
-        description='Clasify cryoEM grid squares.')
-    parser.add_argument(
-        '-p', '--predict', help='Predict cryoEM grid maps.')
-    parser.add_argument(
-        '-pc', '--predict_classifier', help='Classify cryoEM grid squares.', action='store_true')
-    parser.add_argument(
-        '-tc', '--train_classifier', help='Train cryoEM grid square classifier.', action='store_true')
-    parser.add_argument(
-        '-pd', '--predict_detector', help='Detect cryoEM grid squares.')
-    parser.add_argument(
-        '-td', '--train_detector', help='Train cryoEM grid square detector.', action='store_true')
-    args = parser.parse_args()
-
-    # run classification
-    classifier = Classifier()
-    if args.train_classifier:
-        classifier.train()
-        classifier.useTrainedModels = True
-        # classifier.predict()
-    if args.predict_classifier or args.predict:
-        classifier.predict()
-
-
-if __name__ == "__main__":
-    main()

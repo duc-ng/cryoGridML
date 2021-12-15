@@ -8,11 +8,9 @@ src/__pycache__
 classification/results
 classification/model_classification.h5
 
-detection/results
-detection/logs
-detection/filtered_tmp
-detection/dataBlend
-detection/dataResized
+detection/1_blend
+detection/2_resized
+detection/3_results
 detection/cryolo_model.h5
 
 data/predict

@@ -3,7 +3,7 @@
         "pathGoodMRC": "data/trainClassifier/good.mrc",
         "pathBadMRC": "data/trainClassifier/bad.mrc",
         "classes": ["good", "bad"],
-        "imgSize": 196
+        "imgSize": 392
     },
     "predict": {
         "saveGridSquares": true,
